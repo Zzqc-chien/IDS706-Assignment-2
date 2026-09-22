@@ -1,5 +1,7 @@
 # Heart Disease UCI - Exploratory Data Analysis
 
+[![Tests](https://github.com/Zzqc-chien/IDS706-Assignment-2/actions/workflows/tests.yml/badge.svg)](https://github.com/Zzqc-chien/IDS706-Assignment-2/actions/workflows/tests.yml)
+
 Series 1 of a 3-week data analysis project. This week covers importing and
 inspecting a dataset, basic filtering/grouping, an initial ML exploration,
 and one visualization.
@@ -106,3 +108,40 @@ See `age_vs_heartrate_by_diagnosis.png` for the visualization.
 ## Refactoring Motto
 
 > "Refactor Early, Refactor Often: Keep Your Codebase's Cholesterol Low!"
+
+## Testing
+
+This project uses **pytest** to test the core components of the data analysis workflow.
+
+The test suite includes:
+
+- Data loading and schema validation
+- Missing-file edge case
+- Data preprocessing and duplicate removal
+- Feature and target preparation
+- Logistic regression model training and prediction
+- End-to-end system testing from data loading through visualization
+
+Run all tests with:
+
+`python -m pytest -v`
+
+Run tests with coverage:
+
+`python -m pytest -v --cov=analysis --cov-report=term-missing`
+
+The current test suite contains **6 tests**, and all tests pass successfully with **75% code coverage**.
+
+## Continuous Integration
+
+GitHub Actions automatically runs the complete test suite whenever changes are pushed to the `main` branch or when a pull request targets `main`.
+
+The workflow is defined in `.github/workflows/tests.yml` and automatically sets up Python, installs dependencies, and runs pytest with coverage.
+
+The CI status badge at the top of this README shows the latest workflow result.
+
+## Phase 2 Improvements
+
+In this phase, the original Assignment 2 analysis was refactored into reusable functions for data loading, preprocessing, feature preparation, model training, prediction, evaluation, and visualization.
+
+Unit tests and an end-to-end system test were added to improve reliability and reproducibility. GitHub Actions now automatically verifies that the project continues to work whenever changes are pushed.
