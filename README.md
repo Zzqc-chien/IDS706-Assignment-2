@@ -94,9 +94,15 @@ this folder.
 
 See `age_vs_heartrate_by_diagnosis.png` for the visualization.
 
+![Age vs. Maximum Heart Rate, colored by diagnosis](age_vs_heartrate_by_diagnosis.png)
+
 ## Files
 
 - `analysis.py` - full analysis script (run this)
 - `heart.csv` - dataset
 - `age_vs_heartrate_by_diagnosis.png` - output visualization
 - `requirements.txt` - Python dependencies
+
+## Refactoring Motto
+
+> "Refactor Early, Refactor Often — Keep Your Codebase's Cholesterol Low!"
