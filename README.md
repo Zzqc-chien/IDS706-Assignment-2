@@ -82,10 +82,15 @@ this folder.
   test set. The most influential features (by standardized coefficient
   magnitude) were chest pain type (`cp`), `sex`, ST depression (`oldpeak`),
   max heart rate (`thalach`), and `thal`.
-- Polars completed the equivalent read/dedupe/group-by pipeline roughly
-  **3-4x faster** than Pandas in a 50-iteration timing loop. The gap is
-  modest here because the dataset is tiny (302 rows); Polars' multithreaded
-  Rust engine tends to show a bigger advantage as data size grows.
+- The Pandas vs. Polars timing comparison is inconclusive at this size, and
+  that's the interesting finding: with only 302 rows, both libraries finish
+  the read + de-duplicate + group-by pipeline in a few hundredths of a
+  second, dominated by per-call overhead (e.g. Polars spinning up its thread
+  pool) rather than actual computation. Which one comes out ahead varies by
+  run and machine - on one run Pandas was faster. Polars' multithreaded,
+  Rust-based engine is expected to pull ahead once the dataset is large
+  enough that computation time dominates overhead, not on a dataset this
+  small.
 
 See `age_vs_heartrate_by_diagnosis.png` for the visualization.
 

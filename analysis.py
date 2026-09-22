@@ -39,17 +39,13 @@ def section(title: str) -> None:
     print("=" * 70)
 
 
-# ---------------------------------------------------------------------------
 # 1. Import the dataset
-# ---------------------------------------------------------------------------
 section("1. IMPORT DATASET")
 df = pd.read_csv(DATA_PATH, encoding="utf-8-sig")
 print(f"Loaded {df.shape[0]} rows and {df.shape[1]} columns from {DATA_PATH}")
 
 
-# ---------------------------------------------------------------------------
 # 2. Inspect the data
-# ---------------------------------------------------------------------------
 section("2. DATA INSPECTION - head()")
 print(df.head())
 
@@ -69,9 +65,7 @@ if n_dupes:
     print(f"Dropped duplicates -> {df.shape[0]} rows remain")
 
 
-# ---------------------------------------------------------------------------
 # 3. Basic filtering and grouping
-# ---------------------------------------------------------------------------
 section("3. FILTERING - patients over 50 diagnosed with heart disease")
 older_with_disease = df[(df["age"] > 50) & (df["target"] == 1)]
 print(
@@ -101,10 +95,7 @@ by_cp = df.groupby("cp_label").agg(
 ).sort_values("disease_rate", ascending=False)
 print(by_cp.round(2))
 
-
-# ---------------------------------------------------------------------------
-# 4. Explore a machine learning algorithm (Logistic Regression classifier)
-# ---------------------------------------------------------------------------
+# 4. Explore a machine learning algorithm 
 section("4. ML EXPLORATION - Logistic Regression")
 feature_cols = [
     "age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
@@ -138,9 +129,7 @@ print("Top 5 most influential features (by |coefficient|):")
 print(coefs.head())
 
 
-# ---------------------------------------------------------------------------
 # 5. Visualization
-# ---------------------------------------------------------------------------
 section("5. VISUALIZATION")
 sns.set_theme(style="whitegrid")
 fig, ax = plt.subplots(figsize=(8, 6))
@@ -163,12 +152,9 @@ fig.savefig("age_vs_heartrate_by_diagnosis.png", dpi=150)
 print("Saved plot to age_vs_heartrate_by_diagnosis.png")
 
 
-# ---------------------------------------------------------------------------
 # 6. Bonus - Polars comparison
-# ---------------------------------------------------------------------------
 section("6. BONUS - Pandas vs Polars performance comparison")
 
-# Pandas timing: re-read + groupby from scratch
 t0 = time.perf_counter()
 for _ in range(50):
     pdf = pd.read_csv(DATA_PATH, encoding="utf-8-sig").drop_duplicates()
@@ -184,11 +170,16 @@ polars_time = time.perf_counter() - t0
 
 print(f"Pandas: {pandas_time:.4f}s for 50 iterations (read_csv + drop_duplicates + groupby)")
 print(f"Polars: {polars_time:.4f}s for 50 iterations (read_csv + unique + group_by)")
+faster_lib, slower_lib = ("Polars", "Pandas") if polars_time < pandas_time else ("Pandas", "Polars")
+faster_time, slower_time = min(pandas_time, polars_time), max(pandas_time, polars_time)
 print(
-    f"Polars was {pandas_time / polars_time:.2f}x the speed of Pandas on this "
-    "task (differences are small because this dataset only has 303 rows - "
-    "Polars' multithreaded, Rust-based engine shows a bigger advantage on "
-    "larger datasets)."
+    f"{faster_lib} was faster on this run ({slower_time / faster_time:.2f}x vs. "
+    f"{slower_lib}). At only 302 rows, both finish in milliseconds and the "
+    "result is dominated by per-call overhead (e.g. Polars spinning up its "
+    "thread pool) rather than by actual computation - so which library 'wins' "
+    "here is more about measurement noise than a real performance signal. "
+    "Polars' multithreaded, Rust-based engine tends to pull ahead once the "
+    "dataset is large enough that computation time dominates overhead."
 )
 
 # Show the Polars groupby result once, to confirm it matches the Pandas one above
