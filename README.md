@@ -105,4 +105,4 @@ See `age_vs_heartrate_by_diagnosis.png` for the visualization.
 
 ## Refactoring Motto
 
-> "Refactor Early, Refactor Often — Keep Your Codebase's Cholesterol Low!"
+> "Refactor Early, Refactor Often: Keep Your Codebase's Cholesterol Low!"
