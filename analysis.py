@@ -1,29 +1,32 @@
 """
-Heart Disease UCI - Exploratory Data Analysis
-Week 1 (Series 1) deliverable for the 3-week data analysis project.
+Heart Disease UCI - reproducible data analysis workflow.
 
-Dataset: Heart Disease UCI (Cleveland database subset), 303 patient records,
-14 attributes. Source: UCI Machine Learning Repository, mirrored as a clean
-CSV at https://github.com/sharmaroshan/Heart-UCI-Dataset
+This module keeps the exploratory analysis from Assignment 2, while exposing
+the main steps as reusable functions so they can be unit tested and run in CI.
 
 Run with:
     python analysis.py
 """
 
-import time
+from pathlib import Path
 
-import pandas as pd
-import polars as pl
 import matplotlib.pyplot as plt
+import pandas as pd
 import seaborn as sns
 from sklearn.linear_model import LogisticRegression
+from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import StandardScaler
-from sklearn.metrics import accuracy_score, classification_report, confusion_matrix
 
 DATA_PATH = "heart.csv"
+PLOT_PATH = "age_vs_heartrate_by_diagnosis.png"
 
-# Human-readable names for the coded columns, used for prettier grouping output.
+FEATURE_COLS = [
+    "age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
+    "thalach", "exang", "oldpeak", "slope", "ca", "thal",
+]
+REQUIRED_COLUMNS = FEATURE_COLS + ["target"]
+
 CP_LABELS = {
     0: "typical angina",
     1: "atypical angina",
@@ -34,157 +37,176 @@ SEX_LABELS = {0: "female", 1: "male"}
 
 
 def section(title: str) -> None:
+    """Print a readable section header."""
     print("\n" + "=" * 70)
     print(title)
     print("=" * 70)
 
 
-# 1. Import the dataset
-section("1. IMPORT DATASET")
-df = pd.read_csv(DATA_PATH, encoding="utf-8-sig")
-print(f"Loaded {df.shape[0]} rows and {df.shape[1]} columns from {DATA_PATH}")
+def _validate_columns(df: pd.DataFrame) -> None:
+    """Raise a clear error if required project columns are missing."""
+    missing = [c for c in REQUIRED_COLUMNS if c not in df.columns]
+    if missing:
+        raise ValueError(f"Missing required columns: {', '.join(missing)}")
 
 
-# 2. Inspect the data
-section("2. DATA INSPECTION - head()")
-print(df.head())
-
-section("2. DATA INSPECTION - info()")
-df.info()
-
-section("2. DATA INSPECTION - describe()")
-print(df.describe())
-
-section("2. DATA INSPECTION - missing values & duplicates")
-print("Missing values per column:")
-print(df.isnull().sum())
-n_dupes = df.duplicated().sum()
-print(f"\nDuplicate rows: {n_dupes}")
-if n_dupes:
-    df = df.drop_duplicates().reset_index(drop=True)
-    print(f"Dropped duplicates -> {df.shape[0]} rows remain")
+def load_data(path: str | Path = DATA_PATH) -> pd.DataFrame:
+    """Load the heart-disease CSV file."""
+    return pd.read_csv(path, encoding="utf-8-sig")
 
 
-# 3. Basic filtering and grouping
-section("3. FILTERING - patients over 50 diagnosed with heart disease")
-older_with_disease = df[(df["age"] > 50) & (df["target"] == 1)]
-print(
-    f"{len(older_with_disease)} of {len(df)} patients are over 50 and "
-    f"diagnosed with heart disease "
-    f"({len(older_with_disease) / len(df):.1%} of the full dataset)"
-)
-print(older_with_disease[["age", "sex", "cp", "chol", "thalach", "target"]].head())
-
-section("3. GROUPING - summary stats by sex")
-df["sex_label"] = df["sex"].map(SEX_LABELS)
-by_sex = df.groupby("sex_label").agg(
-    count=("target", "count"),
-    mean_age=("age", "mean"),
-    mean_cholesterol=("chol", "mean"),
-    mean_max_heart_rate=("thalach", "mean"),
-    disease_rate=("target", "mean"),
-)
-print(by_sex.round(2))
-
-section("3. GROUPING - summary stats by chest pain type (cp)")
-df["cp_label"] = df["cp"].map(CP_LABELS)
-by_cp = df.groupby("cp_label").agg(
-    count=("target", "count"),
-    mean_age=("age", "mean"),
-    disease_rate=("target", "mean"),
-).sort_values("disease_rate", ascending=False)
-print(by_cp.round(2))
-
-# 4. Explore a machine learning algorithm 
-section("4. ML EXPLORATION - Logistic Regression")
-feature_cols = [
-    "age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
-    "thalach", "exang", "oldpeak", "slope", "ca", "thal",
-]
-X = df[feature_cols]
-y = df["target"]
-
-X_train, X_test, y_train, y_test = train_test_split(
-    X, y, test_size=0.2, random_state=42, stratify=y
-)
-
-scaler = StandardScaler()
-X_train_scaled = scaler.fit_transform(X_train)
-X_test_scaled = scaler.transform(X_test)
-
-model = LogisticRegression(max_iter=1000)
-model.fit(X_train_scaled, y_train)
-y_pred = model.predict(X_test_scaled)
-
-print(f"Train size: {len(X_train)}, Test size: {len(X_test)}")
-print(f"Accuracy: {accuracy_score(y_test, y_pred):.3f}")
-print("\nConfusion matrix (rows=actual, cols=predicted):")
-print(confusion_matrix(y_test, y_pred))
-print("\nClassification report:")
-print(classification_report(y_test, y_pred, target_names=["no disease", "disease"]))
-
-# Which features push the prediction most (largest absolute coefficients)
-coefs = pd.Series(model.coef_[0], index=feature_cols).sort_values(key=abs, ascending=False)
-print("Top 5 most influential features (by |coefficient|):")
-print(coefs.head())
+def preprocess_data(df: pd.DataFrame) -> pd.DataFrame:
+    """Validate schema and remove duplicate rows without mutating input."""
+    _validate_columns(df)
+    return df.drop_duplicates().reset_index(drop=True).copy()
 
 
-# 5. Visualization
-section("5. VISUALIZATION")
-sns.set_theme(style="whitegrid")
-fig, ax = plt.subplots(figsize=(8, 6))
-sns.scatterplot(
-    data=df,
-    x="age",
-    y="thalach",
-    hue="target",
-    palette={0: "#4C72B0", 1: "#C44E52"},
-    alpha=0.8,
-    ax=ax,
-)
-ax.set_title("Age vs. Maximum Heart Rate Achieved, by Heart Disease Diagnosis")
-ax.set_xlabel("Age (years)")
-ax.set_ylabel("Maximum Heart Rate Achieved (thalach, bpm)")
-handles, _ = ax.get_legend_handles_labels()
-ax.legend(handles, ["No disease", "Disease"], title="Diagnosis")
-fig.tight_layout()
-fig.savefig("age_vs_heartrate_by_diagnosis.png", dpi=150)
-print("Saved plot to age_vs_heartrate_by_diagnosis.png")
+def prepare_features(df: pd.DataFrame):
+    """Split a cleaned dataset into model features X and target y."""
+    _validate_columns(df)
+
+    X = df[FEATURE_COLS].copy()
+    y = df["target"].copy()
+
+    if X.isnull().any().any() or y.isnull().any():
+        raise ValueError("Modeling data contains missing values.")
+    if y.nunique() < 2:
+        raise ValueError("Target must contain at least two classes.")
+
+    return X, y
 
 
-# 6. Bonus - Polars comparison
-section("6. BONUS - Pandas vs Polars performance comparison")
+def train_model(
+    X: pd.DataFrame,
+    y: pd.Series,
+    test_size: float = 0.2,
+    random_state: int = 42,
+):
+    """Split, standardize, and train a logistic-regression classifier."""
+    X_train, X_test, y_train, y_test = train_test_split(
+        X,
+        y,
+        test_size=test_size,
+        random_state=random_state,
+        stratify=y,
+    )
 
-t0 = time.perf_counter()
-for _ in range(50):
-    pdf = pd.read_csv(DATA_PATH, encoding="utf-8-sig").drop_duplicates()
-    pdf.groupby("sex")["chol"].mean()
-pandas_time = time.perf_counter() - t0
+    scaler = StandardScaler()
+    X_train_scaled = scaler.fit_transform(X_train)
 
-# Polars timing: equivalent read + groupby from scratch
-t0 = time.perf_counter()
-for _ in range(50):
-    pldf = pl.read_csv(DATA_PATH, encoding="utf8-lossy").unique()
-    pldf.group_by("sex").agg(pl.col("chol").mean())
-polars_time = time.perf_counter() - t0
+    model = LogisticRegression(max_iter=1000)
+    model.fit(X_train_scaled, y_train)
 
-print(f"Pandas: {pandas_time:.4f}s for 50 iterations (read_csv + drop_duplicates + groupby)")
-print(f"Polars: {polars_time:.4f}s for 50 iterations (read_csv + unique + group_by)")
-faster_lib, slower_lib = ("Polars", "Pandas") if polars_time < pandas_time else ("Pandas", "Polars")
-faster_time, slower_time = min(pandas_time, polars_time), max(pandas_time, polars_time)
-print(
-    f"{faster_lib} was faster on this run ({slower_time / faster_time:.2f}x vs. "
-    f"{slower_lib}). At only 302 rows, both finish in milliseconds and the "
-    "result is dominated by per-call overhead (e.g. Polars spinning up its "
-    "thread pool) rather than by actual computation - so which library 'wins' "
-    "here is more about measurement noise than a real performance signal. "
-    "Polars' multithreaded, Rust-based engine tends to pull ahead once the "
-    "dataset is large enough that computation time dominates overhead."
-)
+    return model, scaler, X_train, X_test, y_train, y_test
 
-# Show the Polars groupby result once, to confirm it matches the Pandas one above
-pldf = pl.read_csv(DATA_PATH, encoding="utf8-lossy").unique()
-print("\nPolars groupby result (mean cholesterol by sex):")
-print(pldf.group_by("sex").agg(pl.col("chol").mean().alias("mean_cholesterol")).sort("sex"))
 
-print("\nDone.")
+def predict(model, scaler, X: pd.DataFrame):
+    """Generate class predictions."""
+    return model.predict(scaler.transform(X))
+
+
+def evaluate_model(y_true: pd.Series, y_pred) -> dict:
+    """Return classification metrics used by the project."""
+    return {
+        "accuracy": float(accuracy_score(y_true, y_pred)),
+        "confusion_matrix": confusion_matrix(y_true, y_pred),
+        "classification_report": classification_report(
+            y_true,
+            y_pred,
+            target_names=["no disease", "disease"],
+            output_dict=True,
+            zero_division=0,
+        ),
+    }
+
+
+def create_visualization(
+    df: pd.DataFrame,
+    output_path: str | Path = PLOT_PATH,
+) -> Path:
+    """Save the age-vs-max-heart-rate visualization."""
+    output_path = Path(output_path)
+
+    sns.set_theme(style="whitegrid")
+    fig, ax = plt.subplots(figsize=(8, 6))
+    sns.scatterplot(
+        data=df,
+        x="age",
+        y="thalach",
+        hue="target",
+        palette={0: "#4C72B0", 1: "#C44E52"},
+        alpha=0.8,
+        ax=ax,
+    )
+    ax.set_title("Age vs. Maximum Heart Rate Achieved, by Heart Disease Diagnosis")
+    ax.set_xlabel("Age (years)")
+    ax.set_ylabel("Maximum Heart Rate Achieved (thalach, bpm)")
+    handles, _ = ax.get_legend_handles_labels()
+    ax.legend(handles, ["No disease", "Disease"], title="Diagnosis")
+    fig.tight_layout()
+    fig.savefig(output_path, dpi=150)
+    plt.close(fig)
+
+    return output_path
+
+
+def run_pipeline(
+    data_path: str | Path = DATA_PATH,
+    output_path: str | Path = PLOT_PATH,
+) -> dict:
+    """Run the complete data-analysis workflow end to end."""
+    raw_df = load_data(data_path)
+    clean_df = preprocess_data(raw_df)
+    X, y = prepare_features(clean_df)
+
+    model, scaler, X_train, X_test, y_train, y_test = train_model(X, y)
+    y_pred = predict(model, scaler, X_test)
+    metrics = evaluate_model(y_test, y_pred)
+    plot_path = create_visualization(clean_df, output_path)
+
+    return {
+        "rows_loaded": len(raw_df),
+        "rows_after_preprocessing": len(clean_df),
+        "train_size": len(X_train),
+        "test_size": len(X_test),
+        "accuracy": metrics["accuracy"],
+        "confusion_matrix": metrics["confusion_matrix"],
+        "classification_report": metrics["classification_report"],
+        "plot_path": plot_path,
+        "model": model,
+        "scaler": scaler,
+        "y_test": y_test,
+        "y_pred": y_pred,
+    }
+
+
+def main() -> None:
+    """Run the analysis from the command line."""
+    section("1. IMPORT AND PREPROCESS DATA")
+    raw_df = load_data(DATA_PATH)
+    clean_df = preprocess_data(raw_df)
+    print(f"Loaded {len(raw_df)} rows; {len(clean_df)} rows after preprocessing.")
+
+    section("2. MODEL AND EVALUATION")
+    results = run_pipeline(DATA_PATH, PLOT_PATH)
+    print(f"Train size: {results['train_size']}")
+    print(f"Test size: {results['test_size']}")
+    print(f"Accuracy: {results['accuracy']:.3f}")
+    print("\nConfusion matrix:")
+    print(results["confusion_matrix"])
+    print("\nClassification report:")
+    print(
+        classification_report(
+            results["y_test"],
+            results["y_pred"],
+            target_names=["no disease", "disease"],
+            zero_division=0,
+        )
+    )
+
+    section("3. VISUALIZATION")
+    print(f"Saved plot to {results['plot_path']}")
+
+
+if __name__ == "__main__":
+    main()
