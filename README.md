@@ -2,9 +2,7 @@
 
 [![Tests](https://github.com/Zzqc-chien/IDS706-Assignment-2/actions/workflows/tests.yml/badge.svg)](https://github.com/Zzqc-chien/IDS706-Assignment-2/actions/workflows/tests.yml)
 
-Series 1 of a 3-week data analysis project. This week covers importing and
-inspecting a dataset, basic filtering/grouping, an initial ML exploration,
-and one visualization.
+This repository continues the Heart Disease UCI data analysis project from Assignment 2. In this phase, the project focuses on improving reproducibility and reliability through reusable functions, unit and system testing, code coverage, and continuous integration with GitHub Actions.
 
 ## Project Goal
 
