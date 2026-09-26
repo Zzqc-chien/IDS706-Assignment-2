@@ -22,8 +22,19 @@ DATA_PATH = "heart.csv"
 PLOT_PATH = "age_vs_heartrate_by_diagnosis.png"
 
 FEATURE_COLS = [
-    "age", "sex", "cp", "trestbps", "chol", "fbs", "restecg",
-    "thalach", "exang", "oldpeak", "slope", "ca", "thal",
+    "age",
+    "sex",
+    "cp",
+    "trestbps",
+    "chol",
+    "fbs",
+    "restecg",
+    "thalach",
+    "exang",
+    "oldpeak",
+    "slope",
+    "ca",
+    "thal",
 ]
 REQUIRED_COLUMNS = FEATURE_COLS + ["target"]
 

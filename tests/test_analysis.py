@@ -15,7 +15,6 @@ from analysis import (
     train_model,
 )
 
-
 DATA_PATH = Path("heart.csv")
 
 
@@ -86,7 +85,9 @@ def test_end_to_end_pipeline(tmp_path):
 
     assert result["rows_loaded"] > 0
     assert result["rows_after_preprocessing"] <= result["rows_loaded"]
-    assert result["train_size"] + result["test_size"] == result["rows_after_preprocessing"]
+    assert (
+        result["train_size"] + result["test_size"] == result["rows_after_preprocessing"]
+    )
     assert 0.0 <= result["accuracy"] <= 1.0
     assert result["confusion_matrix"].shape == (2, 2)
     assert output_path.exists()
