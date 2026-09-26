@@ -12,6 +12,7 @@ from analysis import (
     prepare_features,
     preprocess_data,
     run_pipeline,
+    split_data,
     train_model,
 )
 
@@ -68,7 +69,8 @@ def test_model_training_and_prediction():
     clean_df = preprocess_data(load_data(DATA_PATH))
     X, y = prepare_features(clean_df)
 
-    model, scaler, _, X_test, _, y_test = train_model(X, y)
+    X_train, X_test, y_train, y_test = split_data(X, y)
+    model, scaler = train_model(X_train, y_train)
     predictions = predict(model, scaler, X_test)
 
     assert len(predictions) == len(y_test)
