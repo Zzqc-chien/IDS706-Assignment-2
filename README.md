@@ -89,7 +89,7 @@ this is an exploratory analysis, not a diagnostic tool.
 
 ## How to run
 
-Run from the repository root using Python 3.12:
+Run from the repository root using Python 3.10 or newer (CI tests 3.10–3.12):
 
 ```bash
 python3 -m venv .venv
@@ -126,8 +126,8 @@ make docker-run     # docker run --rm -v "$(pwd)/output:/app/output" heart-analy
 make docker-test    # docker run --rm heart-analysis python -m pytest -q
 ```
 
-<img src="docs/images/docker_build.png" width="800" alt="Successful Docker image build">
-<img src="docs/images/docker_run.png" width="800" alt="Container analysis output and 18 passing tests">
+<img src="docs/images/docker_build.png" width="600" alt="Successful Docker image build">
+<img src="docs/images/docker_run.png" width="500" alt="Container analysis output and 18 passing tests">
 
 Additional evidence: [container status](docs/images/docker_ps.png).
 The analysis is a batch job: the container exits after it finishes. Generated
@@ -152,7 +152,7 @@ figures remain in the host's `output/` directory when using `make docker-run`.
 2. **test** — matrix over **Python 3.10 / 3.11 / 3.12**, pytest with coverage
 3. **docker** — builds the image, then runs the tests and the analysis inside it
 
-<img src="docs/images/ci_matrix.png" width="600" alt="CI run with lint and test matrix">
+<img src="docs/images/ci_matrix.png" width="600" alt="CI run with lint, Python 3.10–3.12 test matrix, and Docker job">
 
 ## Testing
 
@@ -186,7 +186,7 @@ and the Docker build/test/run workflow in GitHub Actions.
 
 An AI assistant helped draft the change; I reviewed each edit, ran the checks above, and kept only changes that preserved behavior.
 
-<img src="docs/images/refactor_diff.png" width="900" alt="Before-and-after commit diff extracting split_data from train_model">
+<img src="docs/images/refactor_diff.png" width="700" alt="Before-and-after commit diff extracting split_data from train_model">
 
 ## Project structure
 
