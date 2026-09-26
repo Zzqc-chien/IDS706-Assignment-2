@@ -16,14 +16,14 @@ help:
 	@echo "make all           install + lint + test"
 
 install:
-	pip install -r requirements.txt
+	python -m pip install -r requirements-dev.txt
 
 format:
-	black .
+	python -m black .
 
 lint:
-	black --check .
-	flake8 .
+	python -m black --check .
+	python -m flake8 .
 
 test:
 	python -m pytest -v --cov=analysis --cov-report=term-missing
