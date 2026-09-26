@@ -41,3 +41,15 @@ jobs:
         run: pip install -r requirements.txt
       - name: Run tests with coverage
         run: pytest -v --cov=analysis --cov-report=term-missing
+
+  docker:
+    needs: test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Build image
+        run: docker build -t heart-analysis .
+      - name: Run tests in container
+        run: docker run --rm heart-analysis python -m pytest -q
+      - name: Run analysis in container
+        run: docker run --rm heart-analysis
